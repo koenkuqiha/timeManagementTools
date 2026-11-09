@@ -1,0 +1,2240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>时间记录看板 v3</title>
+<style>
+:root{
+  --bg:#F5F7FA; --card:#fff; --line:#E6ECF3; --line2:#EEF2F7;
+  --ink:#0F172A; --ink2:#475569; --ink3:#94A3B8; --blue:#2563EB;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:14px; line-height:1.5; padding:24px 28px 64px;
+  font-variant-numeric:tabular-nums;
+}
+.wrap{max-width:1240px;margin:0 auto}
+
+/* ---------- header ---------- */
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:20px}
+h1{font-size:19px;font-weight:650;letter-spacing:-.2px}
+.sub{font-size:12.5px;color:var(--ink3);margin-top:3px}
+.title-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pdf-btn{
+  height:23px;padding:0 9px;border:1px solid var(--line);background:#fff;border-radius:6px;
+  font-size:11.5px;color:var(--ink2);cursor:pointer;font-family:inherit;
+  display:inline-flex;align-items:center;gap:5px;transition:.15s;white-space:nowrap;
+}
+.pdf-btn:hover{border-color:#C9D5E4;color:var(--ink);background:#F8FAFC}
+.pdf-btn svg{flex:none}
+.dater{display:flex;align-items:center;gap:6px}
+.dater button{
+  height:32px;min-width:32px;padding:0 10px;border:1px solid var(--line);
+  background:#fff;border-radius:8px;cursor:pointer;color:var(--ink2);font-size:13px;
+  font-family:inherit;transition:.15s;
+}
+.dater button:hover:not(:disabled){border-color:#C9D5E4;color:var(--ink)}
+.dater button:disabled{opacity:.35;cursor:not-allowed}
+.dater input{
+  height:32px;border:1px solid var(--line);border-radius:8px;padding:0 8px;
+  font-family:inherit;font-size:13px;color:var(--ink);background:#fff;
+}
+
+/* ---------- card ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.card h2{
+  font-size:11.5px;font-weight:650;letter-spacing:.06em;color:var(--ink3);
+  text-transform:uppercase;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;
+}
+.card h2 em{font-style:normal;font-weight:500;letter-spacing:0;text-transform:none;color:var(--ink3);font-size:11.5px}
+
+.top{display:grid;grid-template-columns:340px 1fr;gap:16px;margin-bottom:16px;align-items:start}
+.top > .card:last-child{display:flex;flex-direction:column;align-self:stretch}
+.top > .card:last-child .bars{flex:1;justify-content:space-around}
+.row2{margin-bottom:16px}
+.row3{display:grid;grid-template-columns:400px 1fr;gap:16px;margin-bottom:16px}
+
+/* ---------- palette ---------- */
+.palette-bar{display:flex;align-items:flex-start;gap:6px;margin-bottom:14px}
+.palette{display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:0}
+.palette button{
+  display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;
+  border:1px solid var(--line);background:#fff;font-size:12.5px;color:var(--ink2);
+  cursor:pointer;font-family:inherit;transition:.15s;max-width:100%;
+}
+.palette button:hover{border-color:#C9D5E4}
+.palette button.active{color:var(--ink);font-weight:600;border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.palette button .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+.palette button.eraser .dot{background:#fff;border:1.5px solid #CBD5E1}
+.manage-btn{
+  flex:none;height:28px;width:28px;border:1px solid var(--line);background:#fff;border-radius:8px;
+  cursor:pointer;color:var(--ink2);font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;
+  font-family:inherit;transition:.15s;
+}
+.manage-btn:hover{border-color:#C9D5E4;color:var(--ink);background:#F8FAFC}
+.head-acts{display:flex;align-items:center;gap:6px;flex:none}
+.copy-btn{
+  flex:none;height:28px;padding:0 9px;border:1px solid var(--line);background:#fff;border-radius:8px;
+  cursor:pointer;color:var(--ink2);font-size:12px;font-family:inherit;transition:.15s;
+  display:flex;align-items:center;gap:4px;white-space:nowrap;
+}
+.copy-btn:hover{border-color:#C9D5E4;color:var(--ink);background:#F8FAFC}
+.copy-btn.sm{height:25px;padding:0 8px;font-size:11px;letter-spacing:.04em;text-transform:none}
+
+/* ---------- grid ---------- */
+.grid{display:flex;flex-direction:column;gap:4px;touch-action:none;user-select:none}
+.grow{display:flex;align-items:center;gap:2px}
+.hr{width:38px;flex:none;font-size:10px;color:var(--ink3);text-align:right;padding-right:2px}
+.hr.now-hr{color:#F59E0B;font-weight:700}
+.cell{
+  flex:1;height:17px;border:none;border-radius:3px;background:#F1F5F9;
+  cursor:pointer;padding:0;transition:background .08s;position:relative;
+}
+.cell:hover{outline:1.5px solid #94A3B8;outline-offset:-1}
+.cell.now::after{
+  content:'';position:absolute;left:0;right:0;top:-1px;height:2px;background:#F59E0B;border-radius:1px;
+}
+.cell.half-l{border-radius:3px 1px 1px 3px}
+.cell.half-r{border-radius:1px 3px 3px 1px}
+
+/* ---------- kpi ---------- */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.kpi{background:#F8FAFC;border-radius:10px;padding:10px 12px}
+.kpi .k{font-size:11px;color:var(--ink3);margin-bottom:2px}
+.kpi .v{font-size:20px;font-weight:650;letter-spacing:-.4px}
+.kpi .v small{font-size:11px;font-weight:500;color:var(--ink3);margin-left:2px;letter-spacing:0}
+.progress{height:6px;background:#E9EEF5;border-radius:3px;overflow:hidden;margin-bottom:16px}
+.progress > div{height:100%;background:var(--blue);border-radius:3px;transition:width .3s}
+
+/* ---------- horizontal bars ---------- */
+.bars{display:flex;flex-direction:column;gap:7px}
+.bar-row{display:grid;grid-template-columns:62px 1fr 70px;align-items:center;gap:9px}
+.bar-name{font-size:12px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{height:10px;background:#F1F5F9;border-radius:5px;position:relative;overflow:hidden}
+.bar-fill{height:100%;border-radius:5px;transition:width .3s;position:relative;z-index:1}
+/* 计划目标刻度线：实际条跑到它右边就是超了，左边就是没做到 */
+.bar-target{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:#0F172A;opacity:.45;z-index:2}
+.bar-val{font-size:12px;color:var(--ink2);text-align:right}
+.bar-val.zero{color:#CBD5E1}
+.bar-val i{font-style:normal;color:#B6C2D1}
+
+/* ---------- donut ---------- */
+.donut-svg{width:170px;height:170px;flex:none}
+.donut-svg .dnum{font-size:21px;font-weight:650;fill:var(--ink);letter-spacing:-.6px}
+.donut-svg .dunit{font-size:9.5px;fill:var(--ink3)}
+.donut-wrap{display:flex;align-items:center;gap:18px}
+.seg{display:inline-flex;background:#F1F5F9;border-radius:7px;padding:2px;gap:2px;flex:none}
+.seg button{
+  border:none;background:transparent;padding:3px 9px;border-radius:5px;font-size:11px;
+  color:#64748B;cursor:pointer;font-family:inherit;text-transform:none;letter-spacing:0;
+}
+.seg button.on{background:#fff;color:#0F172A;font-weight:600;box-shadow:0 1px 2px rgba(15,23,42,.08)}
+.seg button:disabled{opacity:.32;cursor:not-allowed}
+.dlegend{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+.dlegend .li{display:grid;grid-template-columns:10px 1fr auto auto;align-items:center;gap:8px;font-size:12.5px}
+.dlegend .li .nm{color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dlegend .li .hh{color:var(--ink);font-weight:600}
+.dlegend .li .pc{color:var(--ink3);font-size:11.5px;width:38px;text-align:right}
+
+/* ---------- svg charts ---------- */
+svg.chart{width:100%;height:auto;display:block;overflow:visible}
+svg.chart .ax{font-size:11px;fill:#94A3B8}
+svg.chart .ax2{font-size:10px;fill:#B6C2D1}
+svg.chart .ax-strong{font-size:11px;fill:#64748B;font-weight:600}
+.empty{padding:44px 0;text-align:center;color:var(--ink3);font-size:13px}
+
+/* ---------- 计划模式 ---------- */
+.cell.plan{opacity:.58}
+.cell.plan:hover{opacity:1}
+
+/* ---------- 趋势：指标开关 ---------- */
+.trend-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px}
+.chip{
+  display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px;border-radius:6px;
+  border:1px solid var(--line);background:#fff;font-size:11.5px;color:#B6C2D1;
+  cursor:pointer;font-family:inherit;transition:.15s;white-space:nowrap;max-width:100%;
+}
+.chip:hover{border-color:#CBD5E1}
+.chip .dot{width:7px;height:7px;opacity:.3;transition:.15s}
+.chip.on{color:var(--ink);border-color:#CBD5E1;background:#F8FAFC}
+.chip.on .dot{opacity:1}
+.chip .nm{overflow:hidden;text-overflow:ellipsis}
+.trend-acts{margin-left:auto;display:flex;gap:5px;flex:none}
+.trend-acts button{
+  height:22px;padding:0 8px;border:1px solid var(--line);background:#fff;border-radius:6px;
+  font-size:11px;color:var(--ink3);cursor:pointer;font-family:inherit;
+}
+.trend-acts button:hover{border-color:#C9D5E4;color:var(--ink2)}
+.trend-sum{display:flex;flex-wrap:wrap;gap:5px 18px;margin-top:11px;font-size:11.5px;color:var(--ink3)}
+.trend-sum b{color:var(--ink);font-weight:650}
+.trend-sum .over{color:#0EA5E9}
+.trend-sum .under{color:#F59E0B}
+
+/* ---------- 计划弹窗 ---------- */
+.plan-opts{display:flex;flex-wrap:wrap;gap:14px;margin-top:13px}
+.plan-opts label{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink2);cursor:pointer}
+.plan-opts input{width:14px;height:14px;accent-color:#0F172A;cursor:pointer;margin:0}
+.plan-src{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.plan-src .lb{font-size:11px;color:var(--ink3)}
+.plan-src input{
+  height:34px;width:100%;border:1px solid #E8EDF4;border-radius:8px;padding:0 8px;
+  font-family:inherit;font-size:13px;color:var(--ink);background:#fff;
+}
+.plan-src input:focus{outline:none;border-color:#94A3B8;box-shadow:0 0 0 3px rgba(148,163,184,.14)}
+
+/* ---------- 复制弹窗 ---------- */
+.seg-wide{display:flex;width:100%;margin-bottom:16px}
+.seg-wide button{flex:1;height:30px}
+.copy-src{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.copy-src .lb{font-size:11px;color:var(--ink3)}
+.src-row{display:flex;gap:6px;align-items:center}
+.src-row input{
+  flex:1;min-width:0;height:34px;border:1px solid #E8EDF4;border-radius:8px;padding:0 8px;
+  font-family:inherit;font-size:13px;color:var(--ink);background:#fff;
+}
+.src-row input:focus{outline:none;border-color:#94A3B8;box-shadow:0 0 0 3px rgba(148,163,184,.14)}
+.src-step{
+  flex:none;width:32px;height:34px;border:1px solid var(--line);background:#fff;border-radius:8px;
+  color:var(--ink2);font-size:14px;line-height:1;cursor:pointer;font-family:inherit;transition:.15s;
+}
+.src-step:hover{border-color:#C9D5E4;color:var(--ink);background:#F8FAFC}
+.src-hint{font-size:11px;color:var(--ink3);margin-top:2px;min-height:15px}
+.src-hint.ok{color:#2563EB}
+.src-hint.warn{color:#C2410C}
+.copy-to{display:flex;gap:8px;align-items:flex-end}
+.copy-to .f{flex:1;display:flex;flex-direction:column;gap:5px;min-width:0}
+.copy-to .f.days{flex:none;width:88px}
+.copy-to .lb{font-size:11px;color:var(--ink3)}
+.copy-to input{
+  height:34px;width:100%;border:1px solid #E8EDF4;border-radius:8px;padding:0 8px;
+  font-family:inherit;font-size:13px;color:var(--ink);background:#fff;
+}
+.copy-to input:focus{outline:none;border-color:#94A3B8;box-shadow:0 0 0 3px rgba(148,163,184,.14)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chips button{
+  height:26px;padding:0 10px;border:1px solid var(--line);background:#fff;border-radius:7px;
+  font-size:11.5px;color:var(--ink2);cursor:pointer;font-family:inherit;transition:.15s;
+}
+.chips button:hover{border-color:#C9D5E4;color:var(--ink)}
+.chips button.on{background:#0F172A;border-color:#0F172A;color:#fff;font-weight:600}
+
+footer{margin-top:28px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.tools button{
+  height:30px;padding:0 12px;border:1px solid var(--line);background:#fff;border-radius:7px;
+  font-size:12.5px;color:var(--ink2);cursor:pointer;font-family:inherit;
+}
+.tools button:hover{border-color:#C9D5E4;color:var(--ink)}
+.tools button.danger{color:#DC2626;border-color:#FBD5D5;background:#FFFBFB}
+.tools button.danger:hover{background:#FEF2F2;border-color:#F5A9A9;color:#B91C1C}
+.tools button.danger:disabled{color:#D8C4C4;border-color:#F0E4E4;background:#FFF;cursor:default}
+.tip{font-size:11.5px;color:var(--ink3);max-width:620px}
+
+/* ---------- modal ---------- */
+.mask{
+  position:fixed;inset:0;background:rgba(15,23,42,.42);z-index:100;
+  display:none;padding:28px 16px;overflow-y:auto;
+}
+.mask.open{display:block}
+.modal{
+  max-width:540px;margin:24px auto;background:#fff;border-radius:16px;
+  box-shadow:0 20px 60px rgba(15,23,42,.22);padding:22px 24px 18px;
+}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.modal-head h3{font-size:16px;font-weight:650;letter-spacing:-.2px}
+.modal-x{
+  border:none;background:transparent;font-size:20px;line-height:1;color:#94A3B8;
+  cursor:pointer;padding:2px 6px;border-radius:6px;font-family:inherit;
+}
+.modal-x:hover{background:#F1F5F9;color:#0F172A}
+.modal-desc{font-size:12px;color:var(--ink3);line-height:1.6;margin-bottom:16px}
+
+/* ---------- 示例数据弹窗 ---------- */
+.modal-sm{max-width:470px}
+.seed-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.seed-presets button{
+  height:28px;padding:0 12px;border:1px solid var(--line);background:#fff;border-radius:7px;
+  font-size:12px;color:var(--ink2);cursor:pointer;font-family:inherit;transition:.15s;
+}
+.seed-presets button:hover{border-color:#C9D5E4;color:var(--ink)}
+.seed-presets button.on{background:#0F172A;border-color:#0F172A;color:#fff;font-weight:600}
+.seed-range{display:flex;align-items:flex-end;gap:8px}
+.seed-range label{flex:1;display:flex;flex-direction:column;gap:5px;min-width:0}
+.seed-range .lb{font-size:11px;color:var(--ink3)}
+.seed-range input{
+  height:34px;width:100%;border:1px solid #E8EDF4;border-radius:8px;padding:0 8px;
+  font-family:inherit;font-size:13px;color:var(--ink);background:#fff;
+}
+.seed-range input:focus{outline:none;border-color:#94A3B8;box-shadow:0 0 0 3px rgba(148,163,184,.14)}
+.seed-range .arrow{flex:none;color:var(--ink3);font-size:13px;padding-bottom:9px}
+.seed-info{
+  margin-top:14px;padding:10px 12px;border-radius:9px;background:#F8FAFC;
+  font-size:12px;color:var(--ink2);line-height:1.65;
+}
+.seed-info.warn{background:#FFF7ED;color:#9A3412}
+.seed-info.err{background:#FEF2F2;color:#B91C1C}
+.seed-info b{font-weight:650}
+.seed-info .note{color:#94A3B8}
+.modal-foot .acts{display:flex;gap:8px;align-items:center}
+.cat-list{border-top:1px solid var(--line2)}
+.cat-item{border-bottom:1px solid var(--line2)}
+.cat-row{display:grid;grid-template-columns:24px 1fr auto 24px 24px 24px;gap:8px;align-items:center;padding:9px 0}
+.swatch{
+  width:24px;height:24px;border-radius:7px;border:1px solid rgba(15,23,42,.12);
+  cursor:pointer;padding:0;transition:.15s;
+}
+.swatch:hover{transform:scale(1.08)}
+.cat-name{
+  height:28px;border:1px solid #E8EDF4;border-radius:6px;padding:0 8px;
+  font-family:inherit;font-size:13px;color:var(--ink);background:#fff;min-width:0;width:100%;
+}
+.cat-name:hover{border-color:#C9D5E4}
+.cat-name:focus{outline:none;border-color:#94A3B8;box-shadow:0 0 0 3px rgba(148,163,184,.14)}
+.kind-toggle{
+  height:24px;padding:0 9px;border-radius:6px;border:1px solid var(--line);background:#fff;
+  font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap;min-width:48px;transition:.15s;
+}
+.kind-toggle.deep{background:#EFF6FF;border-color:#BFDBFE;color:#2563EB;font-weight:600}
+.kind-toggle.normal{background:#F8FAFC;border-color:#E2E8F0;color:#64748B}
+.kind-toggle.junk{background:#FEF2F2;border-color:#FECACA;color:#DC2626;font-weight:600}
+.icon-btn{
+  width:24px;height:24px;border:1px solid transparent;border-radius:6px;background:transparent;
+  color:#94A3B8;cursor:pointer;font-size:12px;line-height:1;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;
+}
+.icon-btn:hover:not(:disabled){background:#F1F5F9;color:#0F172A}
+.icon-btn.del:hover{background:#FEF2F2;color:#EF4444}
+.icon-btn:disabled{opacity:.3;cursor:not-allowed}
+.swatch-pop{display:none;padding:2px 0 12px 32px}
+.swatch-pop.open{display:block}
+.swatch-grid{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+.swatch-grid button{
+  width:24px;height:24px;border-radius:7px;border:1px solid rgba(15,23,42,.1);
+  cursor:pointer;padding:0;
+}
+.swatch-grid button:hover{transform:scale(1.1)}
+.swatch-grid button.sel{box-shadow:0 0 0 2px #fff,0 0 0 3.5px #0F172A}
+.custom-color{
+  width:26px;height:26px;border:1px solid var(--line);border-radius:7px;
+  padding:0;cursor:pointer;background:#fff;
+}
+.add-cat{
+  width:100%;height:36px;margin-top:12px;border:1px dashed #D5DEE9;border-radius:9px;
+  background:#FAFBFD;color:var(--ink2);font-size:13px;cursor:pointer;font-family:inherit;
+}
+.add-cat:hover{border-color:#94A3B8;color:var(--ink);background:#F8FAFC}
+.modal-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px}
+.modal-foot .hint{font-size:11.5px;color:var(--ink3)}
+.btn-primary{
+  height:34px;padding:0 20px;border:none;border-radius:8px;background:#0F172A;color:#fff;
+  font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;
+}
+.btn-primary:hover{background:#1E293B}
+.btn-ghost{
+  height:30px;padding:0 12px;border:1px solid var(--line);border-radius:7px;background:#fff;
+  font-size:12px;color:var(--ink2);cursor:pointer;font-family:inherit;
+}
+.btn-ghost:hover{border-color:#C9D5E4;color:var(--ink)}
+
+@media(max-width:900px){
+  body{padding:16px 14px 48px}
+  .top,.row3{grid-template-columns:1fr}
+  .kpis{grid-template-columns:repeat(3,1fr)}
+  .modal{padding:18px 16px 14px}
+  .cat-row{grid-template-columns:22px 1fr auto 22px 22px 22px;gap:6px}
+  .seed-range{flex-direction:column;align-items:stretch;gap:10px}
+  .seed-range .arrow{display:none}
+}
+
+/* ---------- 打印 / 导出 PDF ---------- */
+.print-only{display:none}
+.print-foot{display:none}
+@page{size:A4 landscape;margin:9mm 10mm}
+
+@media print{
+  /* 关键：保留所有背景色和图表填充，否则打印出来的图全是白的 */
+  *{
+    -webkit-print-color-adjust:exact !important;
+    print-color-adjust:exact !important;
+  }
+  html,body{background:#fff}
+  body{padding:0;font-size:12.5px}
+
+  /* 隐藏所有交互控件——PDF 里点了也没用 */
+  .dater,.manage-btn,.copy-btn,.seg,.pdf-btn,.tools,.cat-modal,.mask{display:none !important}
+  .palette button.eraser{display:none !important}
+  footer{display:none !important}
+
+  .print-only{display:block !important}
+  .print-foot{
+    display:block;margin-top:12px;padding-top:8px;border-top:1px solid var(--line);
+    font-size:10px;color:var(--ink3);line-height:1.6;
+  }
+
+  .wrap{max-width:none}
+  header{margin-bottom:8px}
+
+  /* 打印专用紧凑排版：让「安排 + 当日分布」装进第一页 */
+  body{font-size:12px}
+  .card{padding:12px 14px;border-radius:10px}
+  .card h2{margin-bottom:9px}
+  .grid{gap:2px}
+  .cell{height:14px}
+  .hr{width:34px;font-size:9px}
+  .palette{gap:4px}
+  .palette button{padding:3px 7px;font-size:11px}
+  .palette-bar{margin-bottom:9px}
+  .kpis{gap:8px;margin-bottom:12px}
+  .kpi{padding:8px 10px}
+  .bars{gap:6px}
+  /* 环形图在图例旁要留足宽度，否则分类名会被截成「自…」 */
+  .donut-svg{width:132px;height:132px}
+  .donut-svg .dnum{font-size:19px}
+  .donut-svg .dunit{font-size:8.2px}
+  .donut-wrap{gap:12px}
+  .dlegend{gap:5px}
+  .dlegend .li{font-size:11.5px;gap:6px}
+  .dlegend .li .nm{min-width:0}
+
+  /* 打印时指标开关退化成纯文字标签，看不出「按钮」但能看出选了哪些 */
+  .trend-chips{gap:10px;margin-bottom:8px}
+  .trend-chips .chip{border:none;background:transparent;padding:0;height:auto;font-size:11px;color:var(--ink2)}
+  .trend-chips .chip:not(.on){display:none}
+  .trend-acts{display:none}
+
+  /* 打印时锁定两栏结构，避免响应式断点把小屏布局带进 PDF */
+  .top{grid-template-columns:330px 1fr !important}
+  .row3{grid-template-columns:344px 1fr !important}
+  .kpis{grid-template-columns:repeat(3,1fr) !important}
+
+  /* 确定性分页：每份 PDF 都是同样的 3 页结构，不受窗口宽度影响 */
+  .row2,.row4{break-before:page;page-break-before:always}
+
+  /* 卡片不要被分页从中间切断 */
+  .card{break-inside:avoid;page-break-inside:avoid}
+  .row2,.row3{break-inside:avoid;page-break-inside:avoid}
+  .card h2{break-after:avoid;page-break-after:avoid}
+
+  /* 去掉屏幕上的悬停描边 */
+  .cell:hover{outline:none}
+  svg.chart{overflow:hidden}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="title-row">
+        <h1>时间记录看板</h1>
+        <button id="pdfBtn" class="pdf-btn" title="导出为 PDF：在打印窗口的「目标打印机」里选择「另存为 PDF」">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M6 1.2v6.1m0 0L3.5 4.8M6 7.3l2.5-2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M1.7 8.5v1.3a.9.9 0 0 0 .9.9h6.8a.9.9 0 0 0 .9-.9V8.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          导出 PDF
+        </button>
+      </div>
+      <div class="sub">30 分钟一格 · 切到「计划」先排未来的时间 · 切回「实际」记录真实做了什么</div>
+    </div>
+    <div class="dater">
+      <button id="prev" title="前一天">‹</button>
+      <input type="date" id="dateInput">
+      <button id="next" title="后一天">›</button>
+      <button id="todayBtn">今天</button>
+    </div>
+  </header>
+
+  <div class="top">
+    <section class="card">
+      <h2>安排
+        <span class="head-acts">
+          <span class="seg" id="gridSeg">
+            <button data-m="actual" class="on">实际</button>
+            <button data-m="plan">计划</button>
+          </span>
+          <button class="copy-btn sm" id="copyQuickBtn" title="把这一天的计划或实际记录复制到其他日期">复制</button>
+        </span>
+      </h2>
+      <div class="palette-bar">
+        <div class="palette" id="palette"></div>
+        <button class="manage-btn" id="manageBtn" title="管理分类">⚙</button>
+      </div>
+      <div class="grid" id="grid"></div>
+    </section>
+
+    <section class="card">
+      <h2>当日分布 <em id="dayTip"></em></h2>
+      <div class="kpis" id="kpis"></div>
+      <div class="progress"><div id="fillBar" style="width:0%"></div></div>
+      <div class="bars" id="dayBars"></div>
+    </section>
+  </div>
+
+  <section class="card row2">
+    <h2>近 14 天 计划 vs 实际 <em>虚线=计划　实线=实际　点下方指标可切换显示</em></h2>
+    <div id="trend"></div>
+  </section>
+
+  <div class="row3">
+    <section class="card">
+      <h2>近 7 天占比
+        <span class="seg" id="donutSeg">
+          <button data-m="awake" class="on">清醒时段</button>
+          <button data-m="all">全天</button>
+        </span>
+      </h2>
+      <div id="donutHost"></div>
+    </section>
+    <section class="card">
+      <h2>近 7 天时间流向 <em>每根柱子是一天，颜色是类别，高度是小时</em></h2>
+      <div id="stacked"></div>
+    </section>
+  </div>
+
+  <section class="card row4">
+    <h2>专注热力图 <em>近 4 周，横轴是时刻，纵轴是星期，越深代表该时段「产出」类占比越高</em></h2>
+    <div id="heatmap"></div>
+  </section>
+
+  <footer>
+    <div class="tip">
+      记录原则：不必追求精确到分钟，填不满也没关系——空白代表「未记录」，不会被算进占比。
+      计划表是「打算怎么过」，实际表是「真的怎么过」，两张表分开存，互不覆盖。
+      作息重复的日子不用重画，用「复制」把前一天的搬过去就行。
+    </div>
+    <div class="tools">
+      <button id="planBtn">批量复制</button>
+      <button id="seedBtn">载入示例数据</button>
+      <button id="exportBtn">导出 CSV</button>
+      <button id="clearBtn">清空当日</button>
+      <button id="clearAllBtn" class="danger" title="清空所有日期的实际记录和计划安排，分类设置会保留">清空所有</button>
+    </div>
+  </footer>
+
+  <div class="print-foot" id="printFoot"></div>
+
+</div>
+
+<div class="mask" id="catModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>分类管理</h3>
+      <button class="modal-x" id="modalX" title="关闭">×</button>
+    </div>
+    <p class="modal-desc">
+      修改名称或颜色后，所有历史记录、安排格子和图表会立即同步——因为颜色是分类的属性，不是记录的属性。<br>
+      类型分三种：<b>产出</b>计入产出统计和热力图；<b>消耗</b>计入趋势红线；<b>日常</b>只计入总时长（休息、家务等）。
+    </p>
+    <div class="cat-list" id="catList"></div>
+    <button class="add-cat" id="addCat">+ 新增分类</button>
+    <div class="modal-foot">
+      <button class="btn-ghost" id="resetCats">恢复默认分类</button>
+      <button class="btn-primary" id="catDone">完成</button>
+    </div>
+  </div>
+</div>
+
+<div class="mask" id="seedModal">
+  <div class="modal modal-sm">
+    <div class="modal-head">
+      <h3>载入示例数据</h3>
+      <button class="modal-x" id="seedX" title="关闭">×</button>
+    </div>
+    <p class="modal-desc">
+      选一段时间生成示例数据，用来预览图表效果。<br>
+      同时会生成一份对应的<b>计划表</b>，让「计划 vs 实际」的对比有东西可看。<br>
+      所选范围内已有的记录和计划<b>会被覆盖</b>，分类设置不受影响。
+    </p>
+
+    <div class="seed-presets" id="seedPresets">
+      <button data-d="7">近 7 天</button>
+      <button data-d="14">近 14 天</button>
+      <button data-d="30">近 30 天</button>
+      <button data-d="60">近 60 天</button>
+    </div>
+
+    <div class="seed-range">
+      <label><span class="lb">开始日期</span><input type="date" id="seedStart"></label>
+      <span class="arrow">→</span>
+      <label><span class="lb">结束日期</span><input type="date" id="seedEnd"></label>
+    </div>
+
+    <div class="seed-info" id="seedInfo"></div>
+
+    <div class="modal-foot">
+      <span class="hint">分类设置不会被修改</span>
+      <div class="acts">
+        <button class="btn-ghost" id="seedCancel">取消</button>
+        <button class="btn-primary" id="seedGo">生成</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mask" id="copyModal">
+  <div class="modal modal-sm">
+    <div class="modal-head">
+      <h3>复制</h3>
+      <button class="modal-x" id="copyX" title="关闭">×</button>
+    </div>
+    <p class="modal-desc">
+      把某一天的<b>计划</b>或<b>实际记录</b>整块复制到后面若干天。计划和实际分开存，互不覆盖。
+    </p>
+
+    <div class="seg seg-wide" id="copyKindSeg">
+      <button data-k="plan">计划</button>
+      <button data-k="actual">实际</button>
+    </div>
+
+    <div class="copy-src">
+      <span class="lb">复制哪一天（模板）</span>
+      <div class="src-row">
+        <button class="src-step" id="copySrcPrev" title="往前一天">‹</button>
+        <input type="date" id="copySrc">
+        <button class="src-step" id="copySrcNext" title="往后一天">›</button>
+      </div>
+      <span class="src-hint" id="copySrcHint"></span>
+    </div>
+
+    <div class="copy-to">
+      <label class="f">
+        <span class="lb">从哪天开始</span>
+        <input type="date" id="copyStart">
+      </label>
+      <label class="f days">
+        <span class="lb">复制几天</span>
+        <input type="number" id="copyDays" min="1" max="366" step="1" value="1">
+      </label>
+    </div>
+
+    <div class="chips" id="copyDayChips">
+      <button data-n="1">1 天</button>
+      <button data-n="3">3 天</button>
+      <button data-n="7">7 天</button>
+      <button data-n="14">14 天</button>
+      <button data-n="30">30 天</button>
+    </div>
+
+    <div class="plan-opts">
+      <label><input type="checkbox" id="copyWeekday">仅工作日</label>
+      <label><input type="checkbox" id="copySkipFilled" checked>跳过已有内容</label>
+    </div>
+
+    <div class="seed-info" id="copyInfo"></div>
+
+    <div class="modal-foot">
+      <button class="btn-ghost" id="copyClear">清空这段区间</button>
+      <div class="acts">
+        <button class="btn-ghost" id="copyCancel">取消</button>
+        <button class="btn-primary" id="copyGo">复制</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ======================= 默认分类 ======================= */
+const CAT_KEY = 'timelog_cats_v1';
+const KEY = 'timelog_v1';
+
+const DEFAULT_CATS = [
+  {id:'A', name:'求职',     color:'#3B82F6', kind:'deep'  },
+  {id:'B', name:'自媒体',   color:'#8B5CF6', kind:'deep'  },
+  {id:'C', name:'学习',     color:'#06B6D4', kind:'deep'  },
+  {id:'D', name:'家庭',     color:'#F59E0B', kind:'normal'},
+  {id:'E', name:'杂务',     color:'#94A3B8', kind:'normal'},
+  {id:'F', name:'休息',     color:'#10B981', kind:'normal'},
+  {id:'G', name:'灰色消耗', color:'#EF4444', kind:'junk'  },
+];
+
+const KIND_LABEL = { deep:'产出', normal:'日常', junk:'消耗' };
+const KIND_NEXT  = { deep:'normal', normal:'junk', junk:'deep' };
+
+const PRESET_COLORS = [
+  '#3B82F6','#6366F1','#8B5CF6','#A855F7','#EC4899','#F43F5E',
+  '#EF4444','#F97316','#F59E0B','#EAB308','#84CC16','#22C55E',
+  '#10B981','#06B6D4','#0EA5E9','#64748B'
+];
+
+/* ======================= 工具 ======================= */
+const pad = n => String(n).padStart(2,'0');
+const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const toDate = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); };
+const addDays = (d,n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+const todayStr = () => fmt(new Date());
+const uid = () => 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+
+/* ======================= 分类数据 ======================= */
+let cats = [];
+let CATMAP = {};
+
+function normalizeCat(c){
+  if(!c || typeof c !== 'object') return null;
+  const id = String(c.id || uid());
+  const name = String(c.name || '未命名').slice(0, 12);
+  const color = /^#[0-9a-fA-F]{6}$/.test(c.color || '') ? c.color : PRESET_COLORS[0];
+  let kind = c.kind;
+  if(kind !== 'deep' && kind !== 'normal' && kind !== 'junk'){
+    if(c.deep === true) kind = 'deep';
+    else if(/消耗|浪费|摸鱼|娱乐|刷/.test(name)) kind = 'junk';
+    else kind = 'normal';
+  }
+  return { id, name, color, kind };
+}
+
+function loadCats(){
+  try{
+    const raw = localStorage.getItem(CAT_KEY);
+    if(raw){
+      const arr = JSON.parse(raw);
+      if(Array.isArray(arr) && arr.length){
+        const list = arr.map(normalizeCat).filter(Boolean);
+        if(list.length) return list;
+      }
+    }
+  }catch(e){}
+  return DEFAULT_CATS.map(c => ({...c}));
+}
+
+function saveCats(){
+  try{ localStorage.setItem(CAT_KEY, JSON.stringify(cats)); }catch(e){}
+}
+
+function rebuildCatMap(){
+  CATMAP = Object.fromEntries(cats.map(c => [c.id, c]));
+}
+
+function nextColor(){
+  const used = new Set(cats.map(c => c.color.toLowerCase()));
+  return PRESET_COLORS.find(p => !used.has(p.toLowerCase())) || PRESET_COLORS[cats.length % PRESET_COLORS.length];
+}
+
+/* ======================= 记录数据 ======================= */
+const PLAN_KEY = 'timelog_plan_v1';
+let db = {};
+try { db = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch(e) { db = {}; }
+
+/* 计划表：{ 'YYYY-MM-DD': { slot: catId } }，结构和实际记录一致，但存在另一个 key */
+let plan = {};
+try { plan = JSON.parse(localStorage.getItem(PLAN_KEY) || '{}') || {}; } catch(e) { plan = {}; }
+
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(db)); } catch(e) {}
+  updateClearAllState();
+}
+function savePlan(){
+  try { localStorage.setItem(PLAN_KEY, JSON.stringify(plan)); } catch(e) {}
+}
+
+cats = loadCats();
+rebuildCatMap();
+
+let curDate = todayStr();
+let brush = cats.length ? cats[0].id : 'ERASE';
+let painting = false;
+let donutMode = 'awake';
+let gridMode = 'actual';   // actual | plan
+
+/* ======================= 数据计算 ======================= */
+function totalsOf(m){
+  if(!m) return null;
+  const t = {};
+  let any = false;
+  for(const k in m){
+    const cat = m[k];
+    if(!CATMAP[cat]) continue;
+    t[cat] = (t[cat] || 0) + 0.5;
+    any = true;
+  }
+  return any ? t : null;
+}
+function dayMap(date){
+  const d = db[date];
+  return (d && typeof d === 'object') ? d : null;
+}
+function dayTotals(date){ return totalsOf(dayMap(date)); }
+
+function planMap(date){
+  const p = plan[date];
+  return (p && typeof p === 'object') ? p : null;
+}
+function planTotals(date){ return totalsOf(planMap(date)); }
+function sumTotals(t){
+  let s = 0; for(const k in t) s += t[k]; return s;
+}
+function dayDeep(t){
+  if(!t) return 0;
+  let s = 0;
+  for(const k in t){ const c = CATMAP[k]; if(c && c.kind === 'deep') s += t[k]; }
+  return s;
+}
+function dayJunk(t){
+  if(!t) return 0;
+  let s = 0;
+  for(const k in t){ const c = CATMAP[k]; if(c && c.kind === 'junk') s += t[k]; }
+  return s;
+}
+function lastNDates(n, endStr){
+  const arr = [];
+  const end = toDate(endStr || curDate);
+  for(let i=n-1;i>=0;i--) arr.push(fmt(addDays(end,-i)));
+  return arr;
+}
+function aggregate(dates){
+  const t = {};
+  dates.forEach(d => {
+    const dt = dayTotals(d);
+    if(dt) for(const k in dt) t[k] = (t[k]||0) + dt[k];
+  });
+  return t;
+}
+
+/* ======================= 统一刷新 ======================= */
+function refreshViews(){
+  rebuildCatMap();
+  syncTrendSel();
+  renderPalette();
+  renderGrid();
+  renderDay();
+  renderStacked();
+  renderDonut();
+  renderTrend();
+  renderHeatmap();
+}
+
+/* ======================= 渲染：日期 ======================= */
+const dateInput = document.getElementById('dateInput');
+const prevBtn = document.getElementById('prev');
+const nextBtn = document.getElementById('next');
+const todayBtn = document.getElementById('todayBtn');
+
+const MAX_FUTURE = 90;   // 计划最多往后排 90 天
+
+function setDate(str){
+  curDate = str;
+  dateInput.value = str;
+  nextBtn.disabled = curDate >= fmt(addDays(new Date(), MAX_FUTURE));
+  if(curDate > todayStr() && gridMode === 'actual'){ gridMode = 'plan'; }
+  refreshViews();
+  updateDayTip();
+  updateGridSeg();
+}
+function updateDayTip(){
+  const el = document.getElementById('dayTip');
+  const t = todayStr();
+  if(curDate === t) el.textContent = '今天';
+  else if(curDate > t) el.textContent = curDate + ' · 未来';
+  else el.textContent = curDate;
+}
+function updateGridSeg(){
+  const isFuture = curDate > todayStr();
+  document.querySelectorAll('#gridSeg button').forEach(b => {
+    b.classList.toggle('on', b.dataset.m === gridMode);
+    b.disabled = (b.dataset.m === 'actual' && isFuture);
+    b.title = (b.dataset.m === 'actual' && isFuture) ? '未来日期还没有发生，不能记录实际' : '';
+  });
+}
+function setGridMode(m){
+  if(m === 'actual' && curDate > todayStr()){
+    alert('未来日期还没有发生，不能记录「实际」。\n\n先在这里排计划，等那天过完再切回来记录。');
+    return;
+  }
+  gridMode = m;
+  updateGridSeg();
+  renderGrid();
+  renderDay();
+}
+
+prevBtn.onclick = () => setDate(fmt(addDays(toDate(curDate),-1)));
+nextBtn.onclick = () => { if(curDate < fmt(addDays(new Date(), MAX_FUTURE))) setDate(fmt(addDays(toDate(curDate),1))); };
+todayBtn.onclick = () => setDate(todayStr());
+dateInput.onchange = e => { if(e.target.value) setDate(e.target.value); };
+
+document.getElementById('gridSeg').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if(!b || b.disabled) return;
+  setGridMode(b.dataset.m);
+});
+
+/* ======================= 渲染：调色板 ======================= */
+const palette = document.getElementById('palette');
+
+function renderPalette(){
+  palette.innerHTML = '';
+  cats.forEach(c => {
+    const b = document.createElement('button');
+    b.dataset.brush = c.id;
+    b.className = c.id === brush ? 'active' : '';
+    b.innerHTML = `<span class="dot" style="background:${c.color}"></span><span class="nm">${escapeHtml(c.name)}</span>`;
+    b.onclick = () => { brush = c.id; renderPalette(); };
+    palette.appendChild(b);
+  });
+  const e = document.createElement('button');
+  e.dataset.brush = 'ERASE';
+  e.className = 'eraser' + (brush === 'ERASE' ? ' active' : '');
+  e.innerHTML = `<span class="dot"></span>擦除`;
+  e.onclick = () => { brush = 'ERASE'; renderPalette(); };
+  palette.appendChild(e);
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* ======================= 渲染：录入网格 ======================= */
+const grid = document.getElementById('grid');
+
+function slotRange(i){
+  const h = Math.floor(i/2), m = (i%2)*30;
+  const endMin = i*30 + 30;
+  const eh = Math.floor(endMin/60), em = endMin % 60;
+  return `${pad(h)}:${pad(m)}–${pad(eh)}:${pad(em)}`;
+}
+
+function renderGrid(){
+  const isPlan = gridMode === 'plan';
+  const src = (isPlan ? planMap(curDate) : dayMap(curDate)) || {};
+  const alt = (isPlan ? dayMap(curDate) : planMap(curDate)) || {};
+  const now = new Date();
+  const isToday = curDate === todayStr();
+  const curSlot = isToday ? now.getHours()*2 + Math.floor(now.getMinutes()/30) : -1;
+
+  const frag = document.createDocumentFragment();
+  for(let h=0; h<24; h++){
+    const row = document.createElement('div');
+    row.className = 'grow';
+    const lab = document.createElement('div');
+    lab.className = 'hr';
+    lab.textContent = pad(h) + ':00';
+    if(curSlot >= 0 && Math.floor(curSlot/2) === h) lab.classList.add('now-hr');
+    row.appendChild(lab);
+    for(let s=0; s<2; s++){
+      const idx = h*2 + s;
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'cell ' + (s === 0 ? 'half-l' : 'half-r');
+      cell.dataset.slot = idx;
+      const cat = src[idx];
+      const mark = alt[idx];
+      if(cat && CATMAP[cat]){
+        cell.style.background = CATMAP[cat].color;
+        if(isPlan) cell.classList.add('plan');
+        cell.title = `${slotRange(idx)} · ${isPlan ? '计划' : '实际'}：${CATMAP[cat].name}`;
+      } else {
+        cell.title = `${slotRange(idx)} · ${isPlan ? '未安排' : '未记录'}`;
+      }
+      // 「实际」模式下，用格子底部的细色条提示这一格原本有计划
+      if(!isPlan && mark && CATMAP[mark]){
+        cell.style.boxShadow = `inset 0 -2px 0 ${CATMAP[mark].color}`;
+        cell.title += `　｜计划：${CATMAP[mark].name}`;
+      }
+      if(idx === curSlot) cell.classList.add('now');
+      row.appendChild(cell);
+    }
+    frag.appendChild(row);
+  }
+  grid.innerHTML = '';
+  grid.appendChild(frag);
+}
+
+/* 当前编辑的表：实际记录写 db，计划写 plan */
+function paint(idx){
+  const isPlan = gridMode === 'plan';
+  const store = isPlan ? plan : db;
+  if(brush === 'ERASE'){
+    const d = store[curDate];
+    if(d){ delete d[idx]; if(!Object.keys(d).length) delete store[curDate]; }
+  } else {
+    if(!store[curDate]) store[curDate] = {};
+    store[curDate][idx] = brush;
+  }
+  applyCell(idx);
+}
+
+function applyCell(idx){
+  const cell = grid.querySelector(`[data-slot="${idx}"]`);
+  if(!cell) return;
+  const isPlan = gridMode === 'plan';
+  const other = (isPlan ? dayMap(curDate) : planMap(curDate)) || {};
+  cell.style.boxShadow = '';
+  if(brush === 'ERASE'){
+    cell.style.background = '';
+    cell.classList.remove('plan');
+    cell.title = `${slotRange(idx)} · ${isPlan ? '未安排' : '未记录'}`;
+  } else if(CATMAP[brush]){
+    cell.style.background = CATMAP[brush].color;
+    cell.classList.toggle('plan', isPlan);
+    cell.title = `${slotRange(idx)} · ${isPlan ? '计划' : '实际'}：${CATMAP[brush].name}`;
+  }
+  // 实际模式下恢复「这里有计划」的提示线
+  if(!isPlan && other[idx] && CATMAP[other[idx]]){
+    cell.style.boxShadow = `inset 0 -2px 0 ${CATMAP[other[idx]].color}`;
+  }
+}
+
+grid.addEventListener('pointerdown', e => {
+  const cell = e.target.closest('.cell');
+  if(!cell) return;
+  e.preventDefault();
+  painting = true;
+  paint(Number(cell.dataset.slot));
+});
+grid.addEventListener('pointerover', e => {
+  if(!painting) return;
+  const cell = e.target.closest('.cell');
+  if(!cell) return;
+  paint(Number(cell.dataset.slot));
+});
+window.addEventListener('pointerup', () => {
+  if(!painting) return;
+  painting = false;
+  save();
+  savePlan();
+  renderDay();
+  renderStacked();
+  renderDonut();
+  renderTrend();
+  renderHeatmap();
+});
+window.addEventListener('pointercancel', () => { painting = false; });
+
+/* ======================= 渲染：当日分布 ======================= */
+const kpis = document.getElementById('kpis');
+const fillBar = document.getElementById('fillBar');
+const dayBars = document.getElementById('dayBars');
+
+function renderDay(){
+  const t = dayTotals(curDate);
+  const p = planTotals(curDate);
+  const total = t ? sumTotals(t) : 0;
+  const planTotal = p ? sumTotals(p) : 0;
+  // 偏差按「产出」算：总量每天都接近 24h，用总量做差永远是 0，看不出任何东西
+  const aDeep = dayDeep(t);
+  const pDeep = dayDeep(p);
+  const hasPlan = pDeep > 0;
+  const diff = aDeep - pDeep;
+  const diffColor = !hasPlan ? '#94A3B8' : (diff >= 0 ? '#2563EB' : '#F59E0B');
+  const diffTxt = hasPlan ? (diff >= 0 ? '+' : '−') + Math.abs(diff).toFixed(1) : '—';
+
+  kpis.innerHTML = `
+    <div class="kpi"><div class="k">计划产出</div><div class="v" style="color:${hasPlan?'#0F172A':'#94A3B8'}">${hasPlan?pDeep.toFixed(1):'—'}${hasPlan?'<small>h</small>':''}</div></div>
+    <div class="kpi"><div class="k">实际产出</div><div class="v" style="color:${aDeep>0?'#0F172A':'#94A3B8'}">${aDeep.toFixed(1)}<small>h</small></div></div>
+    <div class="kpi"><div class="k">偏差</div><div class="v" style="color:${diffColor}">${diffTxt}${hasPlan?'<small>h</small>':''}</div></div>
+  `;
+  fillBar.style.width = Math.min(100, total/24*100) + '%';
+  fillBar.parentNode.title = planTotal
+    ? `实际 ${total.toFixed(1)}h ／ 计划 ${planTotal.toFixed(1)}h（总时长，含休息等）`
+    : `实际 ${total.toFixed(1)}h`;
+
+  if(!t && !p){
+    dayBars.innerHTML = '<div class="empty">这一天还没有记录<br><span style="font-size:11.5px">选好类别，在左侧格子上按住拖动即可；想先排计划就切到「计划」</span></div>';
+    return;
+  }
+
+  const maxV = Math.max(...cats.map(c => Math.max((t&&t[c.id])||0, (p&&p[c.id])||0)), 1);
+  dayBars.innerHTML = cats.map(c => {
+    const av = (t && t[c.id]) || 0;
+    const pv = (p && p[c.id]) || 0;
+    if(!av && !pv) return '';
+    const bar = `<div class="bar-track">
+      <div class="bar-fill" style="width:${(av/maxV*100).toFixed(1)}%;background:${c.color}"></div>
+      ${pv ? `<div class="bar-target" style="left:${(pv/maxV*100).toFixed(1)}%" title="计划 ${pv.toFixed(1)}h"></div>` : ''}
+    </div>`;
+    const val = pv
+      ? `${av ? av.toFixed(1) : '0'}<i>/${pv.toFixed(1)}</i>`
+      : `${av.toFixed(1)}h`;
+    return `<div class="bar-row">
+      <span class="bar-name" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</span>
+      ${bar}
+      <span class="bar-val ${av||pv?'':'zero'}">${val}</span>
+    </div>`;
+  }).join('');
+}
+
+/* ======================= 渲染：堆叠条形图 ======================= */
+const stackedHost = document.getElementById('stacked');
+
+function renderStacked(){
+  const days = lastNDates(7);
+  const hasAny = days.some(d => dayTotals(d));
+  if(!hasAny){
+    stackedHost.innerHTML = '<div class="empty">最近 7 天还没有记录</div>';
+    return;
+  }
+  const W=900, H=270, padL=42, padR=14, padT=14, padB=38;
+  const plotW = W-padL-padR, plotH = H-padT-padB;
+  const step = plotW / days.length;
+  const bw = Math.min(46, step*0.55);
+  const MAX = 24;
+
+  let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+  for(let h=0; h<=24; h+=4){
+    const y = padT + plotH - (h/MAX)*plotH;
+    s += `<line x1="${padL}" x2="${W-padR}" y1="${y}" y2="${y}" stroke="#EDF1F6" stroke-width="1"/>`;
+    s += `<text class="ax" x="${padL-8}" y="${y+4}" text-anchor="end">${h}h</text>`;
+  }
+  days.forEach((d,i) => {
+    const t = dayTotals(d) || {};
+    const cx = padL + step*i + step/2;
+    let base = padT + plotH;
+    cats.forEach(c => {
+      const v = t[c.id];
+      if(!v) return;
+      const hgt = (v/MAX)*plotH;
+      base -= hgt;
+      const h2 = Math.max(hgt-1, 1);
+      s += `<rect x="${(cx-bw/2).toFixed(1)}" y="${base.toFixed(1)}" width="${bw.toFixed(1)}" height="${h2.toFixed(1)}" fill="${c.color}" rx="1.5"><title>${d} ${escapeHtml(c.name)} ${v.toFixed(1)}h</title></rect>`;
+    });
+    const dt = toDate(d);
+    const wd = '日一二三四五六'[dt.getDay()];
+    const isToday = d === todayStr();
+    s += `<text class="${isToday?'ax-strong':'ax'}" x="${cx}" y="${H-18}" text-anchor="middle">${dt.getMonth()+1}/${dt.getDate()}</text>`;
+    s += `<text class="${isToday?'ax-strong':'ax2'}" x="${cx}" y="${H-5}" text-anchor="middle">${isToday?'今天':'周'+wd}</text>`;
+  });
+  s += '</svg>';
+  stackedHost.innerHTML = s;
+}
+
+/* ======================= 渲染：环形占比 ======================= */
+const donutHost = document.getElementById('donutHost');
+
+function renderDonut(){
+  const raw = aggregate(lastNDates(7));
+  const totals = {};
+  for(const k in raw){
+    if(donutMode === 'awake'){
+      const c = CATMAP[k];
+      if(c && c.kind === 'normal' && /休息|睡眠|睡|午休/.test(c.name)) continue;
+    }
+    totals[k] = raw[k];
+  }
+  const sum = sumTotals(totals);
+  if(!sum){
+    donutHost.innerHTML = '<div class="empty">这段时间还没有记录</div>';
+    return;
+  }
+  const list = cats.filter(c => totals[c.id]).sort((a,b) => totals[b.id]-totals[a.id]);
+  const R = 54, SW = 20, C = 2*Math.PI*R;
+  let off = 0;
+  let s = `<div class="donut-wrap"><svg class="donut-svg" viewBox="0 0 160 160">`;
+  list.forEach(c => {
+    const frac = totals[c.id]/sum;
+    s += `<circle cx="80" cy="80" r="${R}" fill="none" stroke="${c.color}" stroke-width="${SW}"
+      stroke-dasharray="${(frac*C).toFixed(2)} ${C.toFixed(2)}"
+      stroke-dashoffset="${(-off*C).toFixed(2)}"
+      transform="rotate(-90 80 80)"><title>${escapeHtml(c.name)} ${totals[c.id].toFixed(1)}h</title></circle>`;
+    off += frac;
+  });
+  s += `<text class="dnum" x="80" y="76" text-anchor="middle">${sum.toFixed(1)}</text>
+        <text class="dunit" x="80" y="93" text-anchor="middle">${donutMode === 'awake' ? '清醒小时 / 7 天' : '小时 / 7 天'}</text></svg>`;
+  s += `<div class="dlegend">` + list.map(c => {
+    const v = totals[c.id];
+    return `<div class="li">
+      <span class="dot" style="background:${c.color}"></span>
+      <span class="nm" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</span>
+      <span class="hh">${v.toFixed(1)}h</span>
+      <span class="pc">${(v/sum*100).toFixed(0)}%</span>
+    </div>`;
+  }).join('') + `</div></div>`;
+  donutHost.innerHTML = s;
+}
+
+document.getElementById('donutSeg').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if(!b) return;
+  donutMode = b.dataset.m;
+  Array.from(e.currentTarget.children).forEach(x => x.classList.toggle('on', x === b));
+  renderDonut();
+});
+
+/* ======================= 渲染：计划 vs 实际 趋势 ======================= */
+const trendHost = document.getElementById('trend');
+
+let trendSel = new Set();
+let trendSelInited = false;
+
+function syncTrendSel(){
+  const ids = new Set(cats.map(c => c.id));
+  Array.from(trendSel).forEach(id => { if(!ids.has(id)) trendSel.delete(id); });
+  if(!trendSelInited && cats.length){
+    const deeps = cats.filter(c => c.kind === 'deep').slice(0, 2).map(c => c.id);
+    const pick = deeps.length ? deeps : cats.slice(0, 1).map(c => c.id);
+    pick.forEach(id => trendSel.add(id));
+    trendSelInited = true;
+  }
+}
+
+function niceMax(v){
+  const cands = [1,2,3,4,6,8,10,12,16,20,24];
+  for(const c of cands) if(v <= c) return c;
+  return Math.ceil(v);
+}
+
+/* 把「有值的索引」切成连续段：缺值就断线，不假装是 0 */
+function splitRuns(idxs){
+  const out = [];
+  let cur = [];
+  idxs.forEach((i, k) => {
+    if(k > 0 && i !== idxs[k-1] + 1){ out.push(cur); cur = []; }
+    cur.push(i);
+  });
+  if(cur.length) out.push(cur);
+  return out;
+}
+
+function renderTrend(){
+  const days = lastNDates(14);
+  const rows = days.map(d => {
+    const p = planTotals(d) || {};
+    const a = dayTotals(d) || {};
+    return { date: d, plan: p, actual: a, has: Object.keys(p).length > 0 || Object.keys(a).length > 0 };
+  });
+  const sel = cats.filter(c => trendSel.has(c.id));
+
+  let html = `<div class="trend-chips">` + cats.map(c => {
+    const on = trendSel.has(c.id);
+    return `<button class="chip${on?' on':''}" data-cat="${c.id}" title="${escapeHtml(c.name)}：点击${on?'隐藏':'显示'}">
+      <span class="dot" style="background:${c.color}"></span><span class="nm">${escapeHtml(c.name)}</span>
+    </button>`;
+  }).join('') + `<span class="trend-acts">
+      <button data-act="all">全选</button>
+      <button data-act="none">清空</button>
+    </span></div>`;
+
+  if(!rows.some(r => r.has)){
+    trendHost.innerHTML = html + '<div class="empty">最近 14 天既没有计划也没有记录</div>';
+    return;
+  }
+  if(!sel.length){
+    trendHost.innerHTML = html + '<div class="empty">请至少勾选一个指标</div>';
+    return;
+  }
+
+  const W = 940, H = 300, padL = 44, padR = 18, padT = 18, padB = 34;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+
+  let maxV = 0;
+  rows.forEach(r => sel.forEach(c => {
+    maxV = Math.max(maxV, r.plan[c.id] || 0, r.actual[c.id] || 0);
+  }));
+  const topV = niceMax(Math.max(maxV, 1));
+
+  const xAt = i => padL + (plotW / Math.max(1, rows.length - 1)) * i;
+  const yAt = v => padT + plotH - (v / topV) * plotH;
+
+  let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+
+  for(let i = 0; i <= 4; i++){
+    const v = topV / 4 * i;
+    const y = yAt(v);
+    s += `<line x1="${padL}" x2="${W-padR}" y1="${y}" y2="${y}" stroke="#EDF1F6"/>`;
+    s += `<text class="ax" x="${padL-8}" y="${y+4}" text-anchor="end">${v.toFixed(v % 1 ? 1 : 0)}h</text>`;
+  }
+
+  const segsFor = (c, key) => splitRuns(
+    rows.reduce((acc, r, i) => { if(r[key][c.id] != null) acc.push(i); return acc; }, [])
+  );
+  const lineOf = (seg, c, key) => seg.map((i, k) =>
+    `${k ? 'L' : 'M'}${xAt(i).toFixed(1)} ${yAt(rows[i][key][c.id]).toFixed(1)}`
+  ).join(' ');
+
+  // 只勾一个指标时，把「计划与之间」的落差填成色带——一张图直接看出差在哪
+  if(sel.length === 1){
+    const c = sel[0];
+    const both = splitRuns(rows.reduce((acc, r, i) => {
+      if(r.plan[c.id] != null && r.actual[c.id] != null) acc.push(i);
+      return acc;
+    }, []));
+    both.forEach(seg => {
+      if(seg.length < 2) return;
+      let d = seg.map((i, k) => `${k ? 'L' : 'M'}${xAt(i).toFixed(1)} ${yAt(rows[i].plan[c.id]).toFixed(1)}`).join(' ');
+      for(let k = seg.length - 1; k >= 0; k--){
+        d += `L${xAt(seg[k]).toFixed(1)} ${yAt(rows[seg[k]].actual[c.id]).toFixed(1)}`;
+      }
+      s += `<path d="${d}Z" fill="${c.color}" opacity=".1"/>`;
+    });
+  }
+
+  sel.forEach(c => {
+    segsFor(c, 'plan').forEach(seg => {
+      s += `<path d="${lineOf(seg, c, 'plan')}" fill="none" stroke="${c.color}" stroke-width="1.7"
+        stroke-dasharray="4 3" stroke-linecap="round" opacity=".72"/>`;
+    });
+    segsFor(c, 'actual').forEach(seg => {
+      s += `<path d="${lineOf(seg, c, 'actual')}" fill="none" stroke="${c.color}" stroke-width="2.3"
+        stroke-linejoin="round" stroke-linecap="round"/>`;
+    });
+  });
+
+  // 指标少的时候补数据点，多了就不画，否则一片麻点
+  if(sel.length <= 3){
+    sel.forEach(c => {
+      rows.forEach((r, i) => {
+        if(r.actual[c.id] == null) return;
+        const extra = r.plan[c.id] != null ? `　计划 ${r.plan[c.id].toFixed(1)}h / 实际 ${r.actual[c.id].toFixed(1)}h`
+                                            : `　实际 ${r.actual[c.id].toFixed(1)}h`;
+        s += `<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(r.actual[c.id]).toFixed(1)}" r="2.8" fill="#fff"
+          stroke="${c.color}" stroke-width="1.8"><title>${r.date} ${escapeHtml(c.name)}${extra}</title></circle>`;
+      });
+    });
+  }
+
+  rows.forEach((r, i) => {
+    if(i % 2 !== 0 && i !== rows.length - 1) return;
+    const dt = toDate(r.date);
+    s += `<text class="ax" x="${xAt(i).toFixed(1)}" y="${H-11}" text-anchor="middle">${dt.getMonth()+1}/${dt.getDate()}</text>`;
+  });
+  s += '</svg>';
+
+  let sumPlan = 0, sumActual = 0;
+  rows.forEach(r => sel.forEach(c => {
+    sumPlan += r.plan[c.id] || 0;
+    sumActual += r.actual[c.id] || 0;
+  }));
+  const gap = sumActual - sumPlan;
+  const gapCls = Math.abs(gap) < 0.05 ? '' : (gap > 0 ? 'over' : 'under');
+  const gapTxt = Math.abs(gap) < 0.05 ? '0' : (gap > 0 ? '+' : '−') + Math.abs(gap).toFixed(1);
+
+  html += s;
+  html += `<div class="trend-sum">
+    <span>计划合计 <b>${sumPlan.toFixed(1)}h</b></span>
+    <span>实际合计 <b>${sumActual.toFixed(1)}h</b></span>
+    <span>偏差 <b class="${gapCls}">${gapTxt}h</b></span>
+    <span>按勾选的 ${sel.length} 个指标统计</span>
+  </div>`;
+  trendHost.innerHTML = html;
+}
+
+trendHost.addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if(chip){
+    const id = chip.dataset.cat;
+    if(trendSel.has(id)) trendSel.delete(id); else trendSel.add(id);
+    renderTrend();
+    return;
+  }
+  const act = e.target.closest('[data-act]');
+  if(act){
+    if(act.dataset.act === 'all') cats.forEach(c => trendSel.add(c.id));
+    else trendSel.clear();
+    renderTrend();
+  }
+});
+
+/* ======================= 渲染：热力图 ======================= */
+const heatHost = document.getElementById('heatmap');
+
+function hex(h){
+  h = h.replace('#','');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+function lerp(a,b,t){
+  const pa = hex(a), pb = hex(b);
+  const c = pa.map((v,i) => Math.round(v + (pb[i]-v)*t));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+
+function renderHeatmap(){
+  const dates = lastNDates(28);
+  const acc = {};
+  let any = false;
+  dates.forEach(d => {
+    const m = dayMap(d);
+    if(!m) return;
+    const w = (toDate(d).getDay() + 6) % 7;
+    for(const k in m){
+      const cat = CATMAP[m[k]];
+      if(!cat) continue;
+      const h = Math.floor(Number(k)/2);
+      const key = w + '-' + h;
+      if(!acc[key]) acc[key] = {deep:0, total:0};
+      acc[key].total++;
+      if(cat.kind === 'deep') acc[key].deep++;
+      any = true;
+    }
+  });
+  if(!any){
+    heatHost.innerHTML = '<div class="empty">最近 4 周还没有记录</div>';
+    return;
+  }
+  const CW = 30, CH = 22, GAP = 2, LABL = 34, TOP = 18;
+  const W = LABL + 24*(CW+GAP), H = TOP + 7*(CH+GAP);
+  const wdNames = ['周一','周二','周三','周四','周五','周六','周日'];
+
+  let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+  for(let h=0; h<24; h+=3){
+    s += `<text class="ax2" x="${LABL + h*(CW+GAP) + CW/2}" y="${TOP-6}" text-anchor="middle">${h}</text>`;
+  }
+  for(let w=0; w<7; w++){
+    const y = TOP + w*(CH+GAP);
+    s += `<text class="ax" x="${LABL-8}" y="${y+CH/2+4}" text-anchor="end">${wdNames[w]}</text>`;
+    for(let h=0; h<24; h++){
+      const rec = acc[w+'-'+h];
+      const x = LABL + h*(CW+GAP);
+      if(!rec){
+        s += `<rect x="${x}" y="${y}" width="${CW}" height="${CH}" rx="2" fill="#F8FAFC"/>`;
+        continue;
+      }
+      const ratio = rec.deep / rec.total;
+      const fill = ratio === 0 ? '#E2E8F0' : lerp('#DBEAFE','#1D4ED8', Math.min(1, ratio*1.1));
+      s += `<rect x="${x}" y="${y}" width="${CW}" height="${CH}" rx="2" fill="${fill}"><title>${wdNames[w]} ${h}:00–${h+1}:00 · 产出占比 ${(ratio*100).toFixed(0)}%（${rec.deep} / ${rec.total} 格）</title></rect>`;
+    }
+  }
+  s += '</svg>';
+  heatHost.innerHTML = s + `<div style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:11.5px;color:#94A3B8">
+    <span>低</span>
+    <span style="display:inline-block;width:90px;height:8px;border-radius:4px;background:linear-gradient(90deg,#EEF2F7,#DBEAFE,#1D4ED8)"></span>
+    <span>高</span>
+    <span style="margin-left:16px">空白格 = 该时段从未记录</span>
+  </div>`;
+}
+
+/* ======================= 分类管理 ======================= */
+const catModal = document.getElementById('catModal');
+const catListEl = document.getElementById('catList');
+let openSwatchFor = null;
+
+function openCatModal(){
+  openSwatchFor = null;
+  renderCatList();
+  catModal.classList.add('open');
+}
+function closeCatModal(){
+  catModal.classList.remove('open');
+  openSwatchFor = null;
+}
+
+document.getElementById('manageBtn').onclick = openCatModal;
+document.getElementById('modalX').onclick = closeCatModal;
+document.getElementById('catDone').onclick = closeCatModal;
+catModal.addEventListener('click', e => { if(e.target === catModal) closeCatModal(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && catModal.classList.contains('open')) closeCatModal(); });
+
+function renderCatList(){
+  catListEl.innerHTML = '';
+  cats.forEach((c, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'cat-item';
+
+    const row = document.createElement('div');
+    row.className = 'cat-row';
+
+    const sw = document.createElement('button');
+    sw.className = 'swatch';
+    sw.style.background = c.color;
+    sw.title = '修改颜色';
+    sw.onclick = () => {
+      openSwatchFor = (openSwatchFor === c.id) ? null : c.id;
+      renderCatList();
+    };
+    row.appendChild(sw);
+
+    const nameInput = document.createElement('input');
+    nameInput.className = 'cat-name';
+    nameInput.value = c.name;
+    nameInput.maxLength = 12;
+    nameInput.onchange = () => {
+      const v = nameInput.value.trim();
+      if(!v){ nameInput.value = c.name; return; }
+      if(cats.some(x => x.id !== c.id && x.name === v)){
+        alert('已有同名分类，请换一个名字');
+        nameInput.value = c.name;
+        return;
+      }
+      c.name = v;
+      saveCats();
+      refreshViews();
+      if(brush === c.id) renderPalette();
+    };
+    row.appendChild(nameInput);
+
+    const kindBtn = document.createElement('button');
+    kindBtn.className = 'kind-toggle ' + c.kind;
+    kindBtn.textContent = KIND_LABEL[c.kind];
+    kindBtn.title = '点击切换：产出 → 日常 → 消耗\n产出 = 计入产出统计与热力图\n消耗 = 计入趋势红线\n日常 = 只计入总时长（休息、家务等）';
+    kindBtn.onclick = () => {
+      c.kind = KIND_NEXT[c.kind];
+      saveCats();
+      refreshViews();
+      renderCatList();
+    };
+    row.appendChild(kindBtn);
+
+    const up = document.createElement('button');
+    up.className = 'icon-btn';
+    up.textContent = '↑';
+    up.disabled = i === 0;
+    up.title = '上移';
+    up.onclick = () => moveCat(i, -1);
+    row.appendChild(up);
+
+    const down = document.createElement('button');
+    down.className = 'icon-btn';
+    down.textContent = '↓';
+    down.disabled = i === cats.length - 1;
+    down.title = '下移';
+    down.onclick = () => moveCat(i, 1);
+    row.appendChild(down);
+
+    const del = document.createElement('button');
+    del.className = 'icon-btn del';
+    del.textContent = '×';
+    del.title = '删除分类';
+    del.onclick = () => deleteCat(c.id);
+    row.appendChild(del);
+
+    wrap.appendChild(row);
+
+    const pop = document.createElement('div');
+    pop.className = 'swatch-pop' + (openSwatchFor === c.id ? ' open' : '');
+    if(openSwatchFor === c.id){
+      const gridEl = document.createElement('div');
+      gridEl.className = 'swatch-grid';
+      PRESET_COLORS.forEach(col => {
+        const cb = document.createElement('button');
+        cb.style.background = col;
+        if(col.toLowerCase() === c.color.toLowerCase()) cb.classList.add('sel');
+        cb.title = col;
+        cb.onclick = () => setCatColor(c.id, col);
+        gridEl.appendChild(cb);
+      });
+      const custom = document.createElement('input');
+      custom.type = 'color';
+      custom.className = 'custom-color';
+      custom.value = c.color;
+      custom.title = '自定义颜色';
+      custom.oninput = () => setCatColor(c.id, custom.value);
+      gridEl.appendChild(custom);
+      pop.appendChild(gridEl);
+    }
+    wrap.appendChild(pop);
+
+    catListEl.appendChild(wrap);
+  });
+}
+
+function setCatColor(id, color){
+  const c = CATMAP[id];
+  if(!c) return;
+  c.color = color;
+  saveCats();
+  refreshViews();
+  renderCatList();
+}
+
+function moveCat(i, dir){
+  const j = i + dir;
+  if(j < 0 || j >= cats.length) return;
+  const tmp = cats[i];
+  cats[i] = cats[j];
+  cats[j] = tmp;
+  saveCats();
+  refreshViews();
+  renderCatList();
+}
+
+function countRecords(id){
+  let n = 0;
+  for(const d in db){
+    for(const k in db[d]) if(db[d][k] === id) n++;
+  }
+  return n;
+}
+function countPlanSlots(id){
+  let n = 0;
+  for(const d in plan){
+    for(const k in plan[d]) if(plan[d][k] === id) n++;
+  }
+  return n;
+}
+
+function deleteCat(id){
+  if(cats.length <= 1){
+    alert('至少要保留一个分类。');
+    return;
+  }
+  const c = CATMAP[id];
+  if(!c) return;
+  const n = countRecords(id);
+  const pn = countPlanSlots(id);
+  const bits = [];
+  if(n)  bits.push(`${n} 条实际记录（${(n*0.5).toFixed(1)} 小时）`);
+  if(pn) bits.push(`${pn} 格计划（${(pn*0.5).toFixed(1)} 小时）`);
+  const msg = bits.length
+    ? `「${c.name}」名下有 ${bits.join('、')}。\n\n删除分类会把这些内容一并清除，且无法撤销。确定删除吗？`
+    : `确定删除分类「${c.name}」？`;
+  if(!confirm(msg)) return;
+
+  for(const d in db){
+    for(const k in db[d]){
+      if(db[d][k] === id) delete db[d][k];
+    }
+    if(!Object.keys(db[d]).length) delete db[d];
+  }
+  for(const d in plan){
+    for(const k in plan[d]){
+      if(plan[d][k] === id) delete plan[d][k];
+    }
+    if(!Object.keys(plan[d]).length) delete plan[d];
+  }
+  save();
+  savePlan();
+
+  cats = cats.filter(x => x.id !== id);
+  saveCats();
+  if(brush === id) brush = cats[0].id;
+  refreshViews();
+  renderCatList();
+}
+
+document.getElementById('addCat').onclick = () => {
+  if(cats.length >= 12){
+    alert('分类已经 12 个了。超过 12 个颜色会难以区分，建议先合并一些。');
+    return;
+  }
+  const base = '新分类';
+  let name = base, n = 1;
+  while(cats.some(c => c.name === name)){ name = base + (++n); }
+  const c = { id: uid(), name, color: nextColor(), kind: 'normal' };
+  cats.push(c);
+  saveCats();
+  rebuildCatMap();
+  brush = c.id;
+  refreshViews();
+  openSwatchFor = c.id;
+  renderCatList();
+};
+
+document.getElementById('resetCats').onclick = () => {
+  if(!confirm('恢复为默认的 7 个分类？\n\n这会丢弃你自定义的分类。已记录的数据会保留，但引用到已不存在分类的记录将不再显示。')) return;
+  cats = DEFAULT_CATS.map(c => ({...c}));
+  saveCats();
+  brush = cats[0].id;
+  refreshViews();
+  renderCatList();
+};
+
+/* ======================= 示例数据 ======================= */
+/* 实际：一天里真实长什么样（有摸鱼、有拖延） */
+const SEED_PLAN = [
+  [46, 48, 5], [0, 14, 5],
+  [14, 15, 4],
+  [15, 17, 3],
+  [17, 21, 0],
+  [21, 23, 2],
+  [23, 24, 6],
+  [24, 25, 3],
+  [25, 26, 5],
+  [26, 30, 1],
+  [30, 33, 2],
+  [33, 34, 4],
+  [34, 36, 3],
+  [36, 39, 6],
+  [39, 40, 3],
+  [40, 43, 1],
+  [43, 45, 5],
+  [45, 46, 6],
+];
+/* 计划：想让自己过成什么样（少刷手机，晚上多做事） */
+const SEED_IDEAL = [
+  [46, 48, 5], [0, 14, 5],
+  [14, 15, 4],
+  [15, 17, 3],
+  [17, 21, 0],
+  [21, 23, 2],
+  [23, 24, 2],
+  [24, 25, 3],
+  [25, 26, 5],
+  [26, 30, 1],
+  [30, 33, 2],
+  [33, 34, 4],
+  [34, 36, 3],
+  [36, 38, 1],
+  [38, 39, 6],
+  [39, 40, 3],
+  [40, 43, 1],
+  [43, 45, 5],
+  [45, 46, 5],
+];
+const SEED_JITTER = [0,-1,1,0,1,-1,0,1,-1,0,0,1,-1,0];
+const SEED_SLIP   = [0,1,2,1,2,1,2,1,1,2,1,2,1,1];  // 每天多摸几格鱼
+
+function seedPlanDay(){
+  const catAt = i => cats[i % cats.length].id;
+  const day = {};
+  SEED_IDEAL.forEach(([a,b,ci]) => { for(let k=a; k<b; k++) day[k] = catAt(ci); });
+  return day;
+}
+
+/* 生成「典型的一天」：daysFromEnd=0 表示区间最后一天 */
+function seedActualDay(daysFromEnd){
+  const shift = SEED_JITTER[daysFromEnd % SEED_JITTER.length];
+  const catAt = i => cats[i % cats.length].id;
+  const base = {};
+  SEED_PLAN.forEach(([a,b,ci]) => { for(let k=a; k<b; k++) base[k] = catAt(ci); });
+
+  const day = Object.assign({}, base);
+  if(shift){
+    SEED_PLAN.forEach(([a,b,ci]) => {
+      const id = catAt(ci);
+      const cat = CATMAP[id];
+      if(!cat || cat.kind !== 'deep') return;
+      for(let k=a; k<b; k++) if(day[k] === id) delete day[k];
+      for(let k=a+shift; k<b+shift; k++) if(k >= 0 && k < 48) day[k] = id;
+    });
+    for(let k=0; k<48; k++) if(!day[k] && base[k]) day[k] = base[k];
+  }
+
+  // 有些天会滑走一两格：一半的天挪最早的产出格，一半挪最晚的，让两条线都有波动
+  const slip = SEED_SLIP[daysFromEnd % SEED_SLIP.length] || 0;
+  const junkCat = cats.filter(c => c.kind === 'junk').slice(-1)[0];
+  if(slip && junkCat){
+    const pool = Object.keys(day)
+      .map(Number)
+      .filter(k => CATMAP[day[k]] && CATMAP[day[k]].kind === 'deep')
+      .sort((a,b) => b - a);
+    const order = (daysFromEnd % 2 === 0) ? pool.slice().reverse() : pool;
+    for(let n=0; n<slip && n<order.length; n++) day[order[n]] = junkCat.id;
+  }
+  return day;
+}
+
+/* 按任意区间生成示例数据 */
+function seedDemoRange(startStr, endStr){
+  if(!cats.length) return 0;
+  const s = toDate(startStr), e = toDate(endStr);
+  const total = Math.round((e - s) / 86400000) + 1;
+  const ideal = seedPlanDay();
+  for(let i=0; i<total; i++){
+    const d = fmt(addDays(s, i));
+    db[d]   = seedActualDay(total - 1 - i);
+    plan[d] = Object.assign({}, ideal);
+  }
+  save();
+  savePlan();
+  setDate(endStr);
+  return total;
+}
+
+/* 默认区间：近 14 天（供 ?demo=1 使用） */
+function seedDemo(){
+  const end = new Date();
+  return seedDemoRange(fmt(addDays(end, -13)), fmt(end));
+}
+
+/* ---------- 示例数据弹窗 ---------- */
+const seedModal  = document.getElementById('seedModal');
+const seedStart  = document.getElementById('seedStart');
+const seedEnd    = document.getElementById('seedEnd');
+const seedInfo   = document.getElementById('seedInfo');
+const seedGo     = document.getElementById('seedGo');
+const seedPresetBox = document.getElementById('seedPresets');
+let seedOverlap = 0;
+
+const DAY_MS = 86400000;
+const SEED_MAX_DAYS = 366;
+
+function seedRangeObj(){
+  if(!seedStart.value || !seedEnd.value) return null;
+  const s = toDate(seedStart.value), e = toDate(seedEnd.value);
+  return { s, e, days: Math.round((e - s) / DAY_MS) + 1 };
+}
+
+function seedBlocker(){
+  const r = seedRangeObj();
+  if(!r) return '请选择开始和结束日期。';
+  if(r.days < 1) return '结束日期不能早于开始日期。';
+  if(seedEnd.value > todayStr()) return '结束日期不能晚于今天（未来日期不会出现在图表里）。';
+  if(r.days > SEED_MAX_DAYS) return `一次最多生成 ${SEED_MAX_DAYS} 天，当前选了 ${r.days} 天。`;
+  return '';
+}
+
+function syncSeedPresets(){
+  const r = seedRangeObj();
+  seedPresetBox.querySelectorAll('button').forEach(b => {
+    const on = r && seedEnd.value === todayStr() && r.days === Number(b.dataset.d);
+    b.classList.toggle('on', !!on);
+  });
+}
+
+function refreshSeedInfo(){
+  const err = seedBlocker();
+  if(err){
+    seedInfo.className = 'seed-info err';
+    seedInfo.textContent = err;
+    seedGo.disabled = true;
+    seedGo.textContent = '生成';
+    seedOverlap = 0;
+    return;
+  }
+  const r = seedRangeObj();
+  seedOverlap = 0;
+  for(let i=0; i<r.days; i++){
+    const d = fmt(addDays(r.s, i));
+    const day = db[d], pd = plan[d];
+    const hasDay  = day && Object.keys(day).some(k => CATMAP[day[k]]);
+    const hasPlan = pd  && Object.keys(pd).some(k => CATMAP[pd[k]]);
+    if(hasDay || hasPlan) seedOverlap++;
+  }
+
+  const span = `${fmt(r.s)} 至 ${fmt(r.e)}`;
+  // 图表只覆盖近 4 周，区间太早会「生成了但看不到」
+  const tooOld = seedEnd.value < fmt(addDays(new Date(), -27));
+  const note = tooOld
+    ? '<br><span class="note">注：图表只展示近 4 周，所选区间较早，图表里可能看不到这批数据。</span>'
+    : '';
+
+  if(seedOverlap > 0){
+    seedInfo.className = 'seed-info warn';
+    seedInfo.innerHTML =
+      `将生成 <b>${r.days}</b> 天数据（${span}）。<br>` +
+      `其中 <b>${seedOverlap}</b> 天已有记录或计划，<b>会被覆盖</b>。` + note;
+    seedGo.textContent = '覆盖生成';
+  } else {
+    seedInfo.className = 'seed-info';
+    seedInfo.innerHTML = `将生成 <b>${r.days}</b> 天数据（${span}）。<br>每天 24 小时的实际记录 + 一份对应的计划表。` + note;
+    seedGo.textContent = '生成';
+  }
+  seedGo.disabled = false;
+}
+
+function openSeedModal(){
+  const end = new Date();
+  seedStart.value = fmt(addDays(end, -13));
+  seedEnd.value   = fmt(end);
+  seedStart.max = todayStr();
+  seedEnd.max   = todayStr();
+  refreshSeedInfo();
+  syncSeedPresets();
+  seedModal.classList.add('open');
+}
+function closeSeedModal(){ seedModal.classList.remove('open'); }
+
+seedPresetBox.onclick = e => {
+  const b = e.target.closest('button');
+  if(!b) return;
+  const n = Number(b.dataset.d);
+  const end = new Date();
+  seedStart.value = fmt(addDays(end, -(n-1)));
+  seedEnd.value   = fmt(end);
+  refreshSeedInfo();
+  syncSeedPresets();
+};
+
+seedStart.oninput = () => { refreshSeedInfo(); syncSeedPresets(); };
+seedEnd.oninput   = () => { refreshSeedInfo(); syncSeedPresets(); };
+
+seedGo.onclick = () => {
+  if(seedBlocker()) return;
+  const r = seedRangeObj();
+  if(seedOverlap > 0){
+    if(!confirm(`所选范围里有 ${seedOverlap} 天已有记录或计划，生成示例数据会覆盖这些内容。\n\n继续吗？`)) return;
+  }
+  seedDemoRange(fmt(r.s), fmt(r.e));
+  closeSeedModal();
+};
+
+document.getElementById('seedX').onclick = closeSeedModal;
+document.getElementById('seedCancel').onclick = closeSeedModal;
+seedModal.addEventListener('click', e => { if(e.target === seedModal) closeSeedModal(); });
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && seedModal.classList.contains('open')) closeSeedModal();
+});
+
+/* ======================= 复制 / 批量套用 ======================= */
+const copyModal     = document.getElementById('copyModal');
+const copyKindSeg   = document.getElementById('copyKindSeg');
+const copySrcEl     = document.getElementById('copySrc');
+const copyStartEl   = document.getElementById('copyStart');
+const copyDaysEl    = document.getElementById('copyDays');
+const copyWeekdayEl = document.getElementById('copyWeekday');
+const copySkipEl    = document.getElementById('copySkipFilled');
+const copyInfoEl    = document.getElementById('copyInfo');
+const copyGoEl      = document.getElementById('copyGo');
+const copySrcHintEl = document.getElementById('copySrcHint');
+const COPY_MAX_DAYS = 366;
+let copyKind = 'plan';   // plan | actual
+
+const copyUnit  = () => copyKind === 'plan' ? '计划' : '实际记录';
+const copyStore = () => copyKind === 'plan' ? plan : db;
+const copySave  = () => { if(copyKind === 'plan') savePlan(); else save(); };
+
+function copyDays(){
+  let n = parseInt(copyDaysEl.value, 10);
+  if(!isFinite(n) || n < 1) n = 1;
+  return Math.min(n, COPY_MAX_DAYS);
+}
+function copyRange(){
+  if(!copyStartEl.value) return null;
+  return { s: toDate(copyStartEl.value), days: copyDays() };
+}
+
+/* 目标日期：按「仅工作日」过滤；实际记录不允许落在未来 */
+function copyTargetDates(){
+  const r = copyRange();
+  if(!r) return [];
+  const today = toDate(todayStr());
+  const out = [];
+  for(let i=0; i<r.days; i++){
+    const dt = addDays(r.s, i);
+    if(copyKind === 'actual' && dt > today) continue;
+    if(copyWeekdayEl.checked){
+      const wd = dt.getDay();
+      if(wd === 0 || wd === 6) continue;
+    }
+    out.push(fmt(dt));
+  }
+  return out;
+}
+function copyFutureSkipped(){
+  const r = copyRange();
+  if(!r || copyKind !== 'actual') return 0;
+  const today = toDate(todayStr());
+  let n = 0;
+  for(let i=0; i<r.days; i++) if(addDays(r.s, i) > today) n++;
+  return n;
+}
+function copyWritableDates(){
+  const all = copyTargetDates();
+  return copySkipEl.checked ? all.filter(d => !storeHasDay(copyStore(), d)) : all;
+}
+
+function copyBlocker(){
+  if(!copySrcEl.value) return '请选择要复制的那一天。';
+  if(!copyStartEl.value) return '请选择从哪天开始复制。';
+  const src = copySrcEl.value;
+  if(!storeHasDay(copyStore(), src)){
+    return copyKind === 'plan'
+      ? `${src} 这天还没有计划。先在网格里把它排出来，再来复制。`
+      : `${src} 这天还没有实际记录。`;
+  }
+  if(!copyTargetDates().length){
+    return copyKind === 'actual'
+      ? '这段区间都在未来——实际记录只能复制到今天及以前。'
+      : '这段区间里没有可复制的日子——可能都落在周末。';
+  }
+  return '';
+}
+
+function refreshCopySrcHint(){
+  const src = copySrcEl.value;
+  if(!src){ copySrcHintEl.textContent = ''; copySrcHintEl.className = 'src-hint'; return; }
+  const m = copyKind === 'plan' ? planMap(src) : dayMap(src);
+  const t = totalsOf(m);
+  if(!t){
+    copySrcHintEl.className = 'src-hint warn';
+    copySrcHintEl.textContent = copyKind === 'plan'
+      ? '这天还没有计划，先在网格里排一下。'
+      : '这天还没有实际记录。';
+    return;
+  }
+  const n = Object.keys(m).filter(k => CATMAP[m[k]]).length;
+  copySrcHintEl.className = 'src-hint ok';
+  copySrcHintEl.textContent = `这天有 ${n} 个半小时格子，共 ${sumTotals(t).toFixed(1)} 小时`;
+}
+
+function syncCopyKind(){
+  copyKindSeg.querySelectorAll('button').forEach(b => {
+    b.classList.toggle('on', b.dataset.k === copyKind);
+  });
+}
+function syncDayChips(){
+  const n = copyDays();
+  document.querySelectorAll('#copyDayChips button').forEach(b => {
+    b.classList.toggle('on', Number(b.dataset.n) === n);
+  });
+}
+
+function refreshCopyInfo(){
+  refreshCopySrcHint();
+
+  const err = copyBlocker();
+  if(err){
+    copyInfoEl.className = 'seed-info err';
+    copyInfoEl.textContent = err;
+    copyGoEl.disabled = true;
+    copyGoEl.textContent = '复制';
+    return;
+  }
+
+  const all   = copyTargetDates();
+  const write = copyWritableDates();
+  const r     = copyRange();
+  const last  = all[all.length - 1];
+  const srcT  = totalsOf(copyKind === 'plan' ? planMap(copySrcEl.value) : dayMap(copySrcEl.value));
+  const srcH  = srcT ? sumTotals(srcT).toFixed(1) : '0';
+
+  const notes = [];
+  const fut = copyFutureSkipped();
+  if(fut) notes.push(`已自动跳过 <b>${fut}</b> 天未来日期（实际记录不会落在未来）。`);
+
+  if(!write.length){
+    copyInfoEl.className = 'seed-info err';
+    copyInfoEl.innerHTML =
+      `这 ${all.length} 天都已经有${copyUnit()}，且勾了「跳过已有内容」。<br>` +
+      `要改写某天，取消这个勾选即可覆盖；要删掉，用左下角的「清空这段区间」。` +
+      (notes.length ? '<br>' + notes.join('<br>') : '');
+    copyGoEl.disabled = true;
+    copyGoEl.textContent = '复制';
+    return;
+  }
+
+  let body = `把 <b>${copySrcEl.value}</b>（${srcH}h）的${copyUnit()}复制到 <b>${write.length}</b> 天：<br>${fmt(r.s)} 至 ${last}`;
+
+  const filled = all.filter(d => storeHasDay(copyStore(), d)).length;
+  if(copySkipEl.checked){
+    if(filled > 0) notes.push(`其中 <b>${filled}</b> 天已有${copyUnit()}，会被<b>跳过</b>。`);
+    copyInfoEl.className = 'seed-info';
+    copyGoEl.textContent = '复制';
+  } else if(filled > 0){
+    notes.push(`其中 <b>${filled}</b> 天已有${copyUnit()}，会被<b>覆盖</b>。`);
+    copyInfoEl.className = 'seed-info warn';
+    copyGoEl.textContent = '覆盖复制';
+  } else {
+    copyInfoEl.className = 'seed-info';
+    copyGoEl.textContent = '复制';
+  }
+  if(notes.length) body += '<br>' + notes.join('<br>');
+  copyInfoEl.innerHTML = body;
+  copyGoEl.disabled = false;
+}
+
+/* 往前找最近一天有内容的，作为默认模板（找不到就退回前一天） */
+function findLastFilled(kind, fromStr){
+  const store = kind === 'plan' ? plan : db;
+  const base = toDate(fromStr);
+  for(let i=1; i<=30; i++){
+    const d = fmt(addDays(base, -i));
+    if(storeHasDay(store, d)) return d;
+  }
+  if(storeHasDay(store, fromStr)) return fromStr;
+  return fmt(addDays(base, -1));
+}
+
+function openCopyModal(mode){
+  copyKind = (mode === 'plan' || mode === 'actual') ? mode : gridMode;
+  syncCopyKind();
+
+  const today = todayStr();
+  const start = (copyKind === 'actual' && curDate > today) ? today : curDate;
+  copyStartEl.value = start;
+  copyDaysEl.value  = 1;
+  copySrcEl.value   = findLastFilled(copyKind, start);
+  copyWeekdayEl.checked = false;
+  copySkipEl.checked = true;
+  syncDayChips();
+  refreshCopyInfo();
+  copyModal.classList.add('open');
+}
+function closeCopyModal(){ copyModal.classList.remove('open'); }
+
+copyKindSeg.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if(!b) return;
+  copyKind = b.dataset.k;
+  syncCopyKind();
+  copySrcEl.value = findLastFilled(copyKind, copyStartEl.value || curDate);
+  refreshCopyInfo();
+});
+
+document.getElementById('copyDayChips').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if(!b) return;
+  copyDaysEl.value = Number(b.dataset.n);
+  syncDayChips();
+  refreshCopyInfo();
+});
+
+document.getElementById('copySrcPrev').onclick = () => {
+  copySrcEl.value = fmt(addDays(toDate(copySrcEl.value || curDate), -1));
+  refreshCopyInfo();
+};
+document.getElementById('copySrcNext').onclick = () => {
+  copySrcEl.value = fmt(addDays(toDate(copySrcEl.value || curDate), 1));
+  refreshCopyInfo();
+};
+
+document.getElementById('copyQuickBtn').onclick = () => openCopyModal(gridMode);
+document.getElementById('planBtn').onclick = () => openCopyModal(gridMode);
+document.getElementById('copyX').onclick = closeCopyModal;
+document.getElementById('copyCancel').onclick = closeCopyModal;
+copyModal.addEventListener('click', e => { if(e.target === copyModal) closeCopyModal(); });
+
+[copySrcEl, copyStartEl, copyDaysEl].forEach(el => {
+  el.oninput = () => { if(el === copyDaysEl) syncDayChips(); refreshCopyInfo(); };
+});
+[copyWeekdayEl, copySkipEl].forEach(el => { el.onchange = refreshCopyInfo; });
+
+copyGoEl.onclick = () => {
+  if(copyBlocker()) return;
+  const store = copyStore();
+  const src = Object.assign({}, store[copySrcEl.value] || {});
+  const write = copyWritableDates();
+  if(!write.length) return;
+  const filled = write.filter(d => storeHasDay(store, d)).length;
+  if(filled > 0 && !confirm(`${filled} 天已有${copyUnit()}，复制后会覆盖原来的内容。\n\n继续吗？`)) return;
+
+  write.forEach(d => { store[d] = Object.assign({}, src); });
+  copySave();
+  closeCopyModal();
+  setDate(write[0]);
+  if(copyKind === 'plan') setGridMode('plan');
+  else setGridMode('actual');
+};
+
+document.getElementById('copyClear').onclick = () => {
+  const r = copyRange();
+  if(!r){ alert('请先选一个开始日期。'); return; }
+  const store = copyStore();
+  const dates = [];
+  for(let i=0; i<r.days; i++) dates.push(fmt(addDays(r.s, i)));
+  const hit = dates.filter(d => storeHasDay(store, d));
+  if(!hit.length){ alert(`这段区间里没有${copyUnit()}。`); return; }
+
+  const hours = hit.reduce((s, d) => {
+    const t = totalsOf(copyKind === 'plan' ? planMap(d) : dayMap(d));
+    return s + (t ? sumTotals(t) : 0);
+  }, 0);
+
+  if(!confirm(`将清空 ${hit.length} 天的${copyUnit()}（${hit[0]} 至 ${hit[hit.length-1]}，共 ${hours.toFixed(1)} 小时）。\n\n无法撤销。确定吗？`)) return;
+
+  hit.forEach(d => { delete store[d]; });
+  copySave();
+  closeCopyModal();
+  setDate(curDate);
+};
+
+document.addEventListener('keydown', e => {
+  if(e.key !== 'Escape') return;
+  [copyModal, seedModal, catModal].forEach(m => {
+    if(m && m.classList.contains('open')) m.classList.remove('open');
+  });
+});
+
+/* ======================= 导出 / 清空 ======================= */
+function exportCSV(){
+  const rows = [['日期','类型','起始时间','结束时间','类别代码','类别名称']];
+  const push = (store, label) => {
+    Object.keys(store).sort().forEach(d => {
+      const day = store[d];
+      if(!day || typeof day !== 'object') return;
+      for(let i=0;i<48;i++){
+        const cat = day[i];
+        if(!cat || !CATMAP[cat]) continue;
+        const [st, et] = slotRange(i).split('–');
+        rows.push([d, label, st, et, cat, CATMAP[cat].name]);
+      }
+    });
+  };
+  push(db, '实际');
+  push(plan, '计划');
+
+  const csv = '\ufeff' + rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `时间记录_${todayStr()}.csv`;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 3000);
+}
+
+document.getElementById('seedBtn').onclick = openSeedModal;
+document.getElementById('exportBtn').onclick = exportCSV;
+
+/* ======================= 导出 PDF（走浏览器打印） ======================= */
+const baseTitle = document.title;
+function stampPrintFoot(){
+  const el = document.getElementById('printFoot');
+  if(!el) return;
+  const n = new Date();
+  const when = `${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())} ${pad(n.getHours())}:${pad(n.getMinutes())}`;
+  el.textContent = `时间记录看板 · 30 分钟／格 · 虚线为计划、实线为实际 · 空白代表「未记录」，不计入占比 · 当前查看 ${curDate} · 导出于 ${when}`;
+}
+window.addEventListener('beforeprint', stampPrintFoot);
+window.addEventListener('afterprint', () => { document.title = baseTitle; });
+document.getElementById('pdfBtn').onclick = () => {
+  stampPrintFoot();
+  // 打印对话框用 document.title 作为默认文件名
+  document.title = `时间记录看板_${curDate}`;
+  window.print();
+  setTimeout(() => { document.title = baseTitle; }, 800);
+};
+document.getElementById('clearBtn').onclick = () => {
+  const hasDay = storeHasDay(db, curDate);
+  const hasPlan = storeHasDay(plan, curDate);
+  if(hasDay){
+    if(!confirm(`清空 ${curDate} 的实际记录？\n\n计划安排会保留。`)) return;
+    delete db[curDate];
+    save();
+    setDate(curDate);
+    return;
+  }
+  if(hasPlan){
+    alert('这一天没有实际记录，只有计划。\n\n要清计划的话，用「批量复制」里的「清空这段区间」。');
+    return;
+  }
+};
+
+function storeHasDay(store, d){
+  const day = store[d];
+  return !!(day && typeof day === 'object' && Object.keys(day).some(k => CATMAP[day[k]]));
+}
+
+const clearAllBtn = document.getElementById('clearAllBtn');
+clearAllBtn.onclick = () => {
+  const days  = Object.keys(db).filter(d => storeHasDay(db, d));
+  const pdays = Object.keys(plan).filter(d => storeHasDay(plan, d));
+  if(!days.length && !pdays.length){ alert('当前没有任何记录或计划，不需要清空。'); return; }
+
+  const hours = days.reduce((s, d) => {
+    const t = dayTotals(d);
+    return s + (t ? sumTotals(t) : 0);
+  }, 0);
+  days.sort();
+  const all = Array.from(new Set([...days, ...pdays])).sort();
+
+  const parts = [];
+  if(days.length)  parts.push(`${days.length} 天实际记录（${hours.toFixed(1)} 小时）`);
+  if(pdays.length) parts.push(`${pdays.length} 天计划`);
+
+  if(!confirm(
+    `将清空 ${parts.join('、')}。\n\n` +
+    `· 时间范围 ${all[0]} 至 ${all[all.length-1]}\n` +
+    `· 分类设置（名称、颜色、类型）会完整保留\n` +
+    `· 清空后无法恢复\n\n` +
+    `建议先点「导出 CSV」留一份备份。确定继续吗？`
+  )) return;
+  if(!confirm('最后确认：所有实际记录和计划安排都将被删除，且无法撤销。真的继续？')) return;
+
+  db = {};
+  plan = {};
+  save();
+  savePlan();
+  setDate(curDate);
+};
+
+function updateClearAllState(){
+  const btn = document.getElementById('clearAllBtn');
+  if(!btn) return;
+  const has = Object.keys(db).some(d => storeHasDay(db, d))
+           || Object.keys(plan).some(d => storeHasDay(plan, d));
+  btn.disabled = !has;
+  btn.title = has ? '清空所有日期的实际记录和计划安排，分类设置会保留' : '当前没有记录';
+}
+
+/* ======================= 初始化 ======================= */
+renderPalette();
+if(location.search.indexOf('demo') > -1 && !localStorage.getItem(KEY)){
+  seedDemo();
+}
+setDate(todayStr());
+updateClearAllState();
+</script>
+</body>
+</html>
